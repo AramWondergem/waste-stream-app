@@ -1,0 +1,81 @@
+CREATE TABLE `jurisdictions`(
+    `jurisdiction_id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `county_id` INT UNSIGNED NOT NULL,
+    `name` LINESTRING NOT NULL,
+    `lon` DECIMAL(9, 6) NOT NULL,
+    `lat` DECIMAL(8, 6) NOT NULL
+);
+CREATE TABLE `businesses`(
+    `business_id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `business_group_id` SMALLINT NOT NULL,
+    `jurisdiction_id` INT NOT NULL,
+    `name` LINESTRING NOT NULL,
+    `description` LINESTRING NOT NULL,
+    `phone_number` LINESTRING NOT NULL,
+    `lon` DECIMAL(9, 6) NOT NULL,
+    `lat` DECIMAL(8, 6) NOT NULL
+);
+CREATE TABLE `counties`(
+    `fips_code` INT UNSIGNED NOT NULL,
+    `name` LINESTRING NOT NULL,
+    `lon` DECIMAL(9, 6) NOT NULL,
+    `lat` DECIMAL(8, 6) NOT NULL,
+    PRIMARY KEY(`fips_code`)
+);
+CREATE TABLE `business_groups`(
+    `group_id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `group_name` LINESTRING NOT NULL
+);
+CREATE TABLE `disposal_types`(
+    `disposal_type_id` TINYINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `type_name` LINESTRING NOT NULL
+);
+CREATE TABLE `material_types`(
+    `material_id` SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `material_category` LINESTRING NOT NULL,
+    `material_type` LINESTRING NOT NULL
+);
+CREATE TABLE `business_disposal_records`(
+    `business_id` SMALLINT UNSIGNED NOT NULL,
+    `material_id` SMALLINT NOT NULL,
+    `disposal_type_id` TINYINT NOT NULL,
+    `disposal_amount` DOUBLE(8, 2) NOT NULL,
+    PRIMARY KEY(
+        `business_id`,
+        `material_id`,
+        `disposal_type_id`
+    )
+);
+CREATE TABLE `group_disposal_records`(
+    `material_id` SMALLINT UNSIGNED NOT NULL,
+    `jurisdiction_id` INT UNSIGNED NOT NULL,
+    `business_group_id` SMALLINT UNSIGNED NOT NULL,
+    `disposal_type_id` TINYINT NOT NULL,
+    `disposal_amount` DOUBLE(8, 2) NOT NULL,
+    PRIMARY KEY(
+        `material_id`,
+        `jurisdiction_id`,
+        `business_group_id`,
+        `disposal_type_id`
+    )
+);
+ALTER TABLE
+    `business_disposal_records` ADD CONSTRAINT `business_disposal_records_disposal_type_id_foreign` FOREIGN KEY(`disposal_type_id`) REFERENCES `disposal_types`(`disposal_type_id`);
+ALTER TABLE
+    `group_disposal_records` ADD CONSTRAINT `group_disposal_records_jurisdiction_id_foreign` FOREIGN KEY(`jurisdiction_id`) REFERENCES `jurisdictions`(`jurisdiction_id`);
+ALTER TABLE
+    `business_disposal_records` ADD CONSTRAINT `business_disposal_records_material_id_foreign` FOREIGN KEY(`material_id`) REFERENCES `material_types`(`material_id`);
+ALTER TABLE
+    `jurisdictions` ADD CONSTRAINT `jurisdictions_county_id_foreign` FOREIGN KEY(`county_id`) REFERENCES `counties`(`fips_code`);
+ALTER TABLE
+    `business_disposal_records` ADD CONSTRAINT `business_disposal_records_business_id_foreign` FOREIGN KEY(`business_id`) REFERENCES `businesses`(`business_id`);
+ALTER TABLE
+    `group_disposal_records` ADD CONSTRAINT `group_disposal_records_material_id_foreign` FOREIGN KEY(`material_id`) REFERENCES `material_types`(`material_id`);
+ALTER TABLE
+    `group_disposal_records` ADD CONSTRAINT `group_disposal_records_business_group_id_foreign` FOREIGN KEY(`business_group_id`) REFERENCES `business_groups`(`group_id`);
+ALTER TABLE
+    `businesses` ADD CONSTRAINT `businesses_jurisdiction_id_foreign` FOREIGN KEY(`jurisdiction_id`) REFERENCES `jurisdictions`(`jurisdiction_id`);
+ALTER TABLE
+    `group_disposal_records` ADD CONSTRAINT `group_disposal_records_disposal_type_id_foreign` FOREIGN KEY(`disposal_type_id`) REFERENCES `disposal_types`(`disposal_type_id`);
+ALTER TABLE
+    `businesses` ADD CONSTRAINT `businesses_business_group_id_foreign` FOREIGN KEY(`business_group_id`) REFERENCES `business_groups`(`group_id`);
