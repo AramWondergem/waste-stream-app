@@ -1,3 +1,5 @@
+"use client"; // This directive marks the component as a client component
+
 import React, { useState } from "react";
 import ClickOutside from "@/components/ClickOutside";
 

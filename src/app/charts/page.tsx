@@ -10,14 +10,13 @@ export const metadata: Metadata = {
   // other metadata
 };
 
-const BasicChartPage: React.FC = () => {
+const ChartsPage: React.FC = () => {
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Basic Chart" />
-
+      <Breadcrumb pageName="Charts" />
       <BasicChart />
     </DefaultLayout>
   );
 };
 
-export default BasicChartPage;
+export default ChartsPage;
