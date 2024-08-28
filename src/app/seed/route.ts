@@ -193,7 +193,7 @@ export async function GET() {
 
     // TODO - either truncate or drop all tables before seeding? We're assuming this is the one and only time we put data into the database
 
-    await dropAllTables()
+    // await dropAllTables()
 
     await createTables()
     await seedData()
