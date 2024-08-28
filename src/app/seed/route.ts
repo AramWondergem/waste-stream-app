@@ -35,6 +35,7 @@ async function createTables() {
 async function seedData() {
   // TODO - actual data, this is dummy stuff for testing  
   
+  await sql`truncate table ${sql.table('jurisdiction')}`.execute(db)
   await JurisdictionRepository.createJurisdiction({
     county_id: 123,
     name: 'test',
