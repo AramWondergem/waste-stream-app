@@ -1,6 +1,7 @@
 import { db } from './database'
 import { BusinessUpdate, Business, NewBusiness } from './types'
 
+// Find a business by its ID
 export async function findBusinessById(business_id: number) {
   return await db.selectFrom('business')
     .where('business_id', '=', business_id)
@@ -8,6 +9,7 @@ export async function findBusinessById(business_id: number) {
     .executeTakeFirst()
 }
 
+// Find businesses based on partial criteria
 export async function findBusinesss(criteria: Partial<Business>) {
   let query = db.selectFrom('business')
 
@@ -46,10 +48,12 @@ export async function findBusinesss(criteria: Partial<Business>) {
   return await query.selectAll().execute()
 }
 
+// Update a business by its ID
 export async function updateBusiness(business_id: number, updateWith: BusinessUpdate) {
   await db.updateTable('business').set(updateWith).where('business_id', '=', business_id).execute()
 }
 
+// Create a new business entry
 export async function createBusiness(business: NewBusiness) {
   return await db.insertInto('business')
     .values(business)
@@ -57,6 +61,7 @@ export async function createBusiness(business: NewBusiness) {
     .executeTakeFirstOrThrow()
 }
 
+// Delete a business by its ID
 export async function deleteBusiness(business_id: number) {
   return await db.deleteFrom('business').where('business_id', '=', business_id)
     .returningAll()
