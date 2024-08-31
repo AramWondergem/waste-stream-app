@@ -12,13 +12,11 @@ import SelectGroupThree from "@/components/FormElements/SelectGroup/SelectGroupT
 import Select from 'react-select';
 import { MultiValue, ActionMeta } from 'react-select';
 
-
-
 import MultiSelect from "@/components/FormElements/MultiSelect";
 import ChartOne from "./ChartOne";
 import path from 'path';
 import { parseCSV } from "@/utils/csvUtils";
-import { OptionType, getBusinessGroupOptions, getMaterialCategoryOptions, getValidMaterialTypes } from "@/utils/filterUtils";
+import { OptionType, getBusinessGroupOptions, getMaterialCategoryOptions, getValidMaterialTypes, validateMaterialTypes } from "@/utils/filterUtils";
 
 import fs from 'fs';
 
@@ -75,8 +73,6 @@ const BasicChart: React.FC = () => {
             });
     }, []);
 
-    console.log(data);
-
     const aggregatedData = data.reduce<Data[]>((acc, curr) => {
         const existingCategory = acc.find(
             (row: Data) => row.MaterialCategory === curr.MaterialCategory
@@ -99,10 +95,6 @@ const BasicChart: React.FC = () => {
     const businessGroupOptions = getBusinessGroupOptions();
     const materialCategoryOptions = getMaterialCategoryOptions();
 
-    const handleBusinessGroupChange = (selectedOptions: MultiValue<OptionType>) => {
-        setBusinessGroupFilter(selectedOptions)
-    }
-
     /* Listen for material category filter changes and updated valid material
      * type options.
      *
@@ -110,11 +102,16 @@ const BasicChart: React.FC = () => {
      * and all material type's category.
     */
     useEffect(() => {
-            console.log("UE: Material Category Filter: ", materialCategoryFilter);
-            // console.log("UE: Material Type: ", MaterialTypes);
+            console.log("Watching materialCategoryFilter...")
+            if (materialCategoryFilter.length == 0) {
+                console.log("No categories selected. All types available.");
+            } else {
+                console.log("Fetching valid material types for: ", materialCategoryFilter);
+            }
             const validMaterialTypeOptions = getValidMaterialTypes(materialCategoryFilter)
-            console.log("UE: Filtered Material Type Options: ", validMaterialTypeOptions);
+            console.log("Materials options: ", validMaterialTypeOptions);
             setMaterialTypeOptions(validMaterialTypeOptions);
+            console.log("Leaving materialCategoryFilter effect")
         }, [materialCategoryFilter]
     );
 
@@ -124,45 +121,30 @@ const BasicChart: React.FC = () => {
      * Validated material types are the difference of the selected material
      * types and valid material type options.
     */
+    // TODO: If you add Paper and then remove some types and re-add Paper all the types come back
     useEffect( () => {
-            console.log("UE: Material Type Options: ", materialTypeOptions);
+            console.log("Watching materialTypeOptions...")
 
-            const validMaterialTypes = materialTypeOptions.filter(opt => {
-                return selectedMaterialTypes.length === 0 ||
-                        selectedMaterialTypes.some(item => {return item.value == opt.value;}
-                    )
-                }
-            );
-            console.log("UE: Selected Material Types: ", selectedMaterialTypes);
-            console.log("UE: Valid Material Types: ", validMaterialTypes);
+            const validMaterialTypes = validateMaterialTypes(selectedMaterialTypes, materialTypeOptions);
+
             setSelectedMaterialTypes(validMaterialTypes);
         }, [materialTypeOptions]
     );
-    console.log("MT Options: ", materialTypeOptions)
 
-    /* TODO:
-     * The selectedMaterialTypes doesn't get invalidated correctly.
-    */
+    const handleBusinessGroupChange = (selectedOptions: MultiValue<OptionType>) => {
+        console.log("handleBusinessGroupChange");
+        setBusinessGroupFilter(selectedOptions)
+    }
+
     const handleCategoryChange = (selectedOptions: MultiValue<OptionType>) => {
-        setMaterialCategoryFilter(selectedOptions || []);
-        console.log("Selected types: ", selectedMaterialTypes);
-        console.log("Eligible types: ", materialTypeOptions);
-        // const validMaterialTypes = selectedMaterialTypes.filter(item => {
-        //         return materialTypeOptions.some(opt => opt.value == item.value)
-        //     })
-        // console.log("HDL: Selected Material Types: ", selectedMaterialTypes);
-        // console.log("HDL: Material Type Options: ", materialTypeOptions);
-        // console.log("HDL: Valid Material Types: ", validMaterialTypes);
-        // setSelectedMaterialTypes(validMaterialTypes)
+        console.log("handleCategoryChange");
+        setMaterialCategoryFilter(selectedOptions);
     }
 
     const handleMaterialTypeChange = (selectedOptions: MultiValue<OptionType>) => {
+        console.log("handleMaterialTypeChange");
         setSelectedMaterialTypes(selectedOptions);
     }
-
-    console.log("BGs: ", businessGroupFilter)
-    console.log("MCs: ", materialCategoryFilter)
-    console.log("MTs: ", selectedMaterialTypes)
 
     return (
     <>
