@@ -27,6 +27,7 @@ interface DataProps {
 
 const BasicChart: React.FC = () => {
     const [data, setData] = useState<any[]>([]);
+    const [cleanData, setCleanData] = useState<any[]>([]);
     const [jurisdictions, setJurisdction] = useState<string[]>([]);
     const [businessGroupFilter, setBusinessGroupFilter] = useState<MultiValue<OptionType>>([]);
     const [materialCategoryFilter, setMaterialCategoryFilter] = useState<MultiValue<OptionType>>([]);
@@ -73,25 +74,6 @@ const BasicChart: React.FC = () => {
             });
     }, []);
 
-    const aggregatedData = data.reduce<Data[]>((acc, curr) => {
-        const existingCategory = acc.find(
-            (row: Data) => row.MaterialCategory === curr.MaterialCategory
-        );
-
-        if (existingCategory) {
-            existingCategory.MaterialTonsDisposed += curr.MaterialTonsDisposed;
-            existingCategory.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
-            existingCategory.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
-            existingCategory.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
-        } else {
-            acc.push({ ...curr });
-        }
-      return acc;
-    }, []);
-
-    // console.log("MaterialTypes: ", MaterialTypes)
-    // console.log("BusinessGroups: ", BusinessGroups)
-
     const businessGroupOptions = getBusinessGroupOptions();
     const materialCategoryOptions = getMaterialCategoryOptions();
 
@@ -102,18 +84,9 @@ const BasicChart: React.FC = () => {
      * and all material type's category.
     */
     useEffect(() => {
-            console.log("Watching materialCategoryFilter...")
-            if (materialCategoryFilter.length == 0) {
-                console.log("No categories selected. All types available.");
-            } else {
-                console.log("Fetching valid material types for: ", materialCategoryFilter);
-            }
             const validMaterialTypeOptions = getValidMaterialTypes(materialCategoryFilter)
-            console.log("Materials options: ", validMaterialTypeOptions);
             setMaterialTypeOptions(validMaterialTypeOptions);
-            console.log("Leaving materialCategoryFilter effect")
-        }, [materialCategoryFilter]
-    );
+    }, [materialCategoryFilter]);
 
     /* Listen for material type options changes and validate selected material
      * types.
@@ -121,28 +94,64 @@ const BasicChart: React.FC = () => {
      * Validated material types are the difference of the selected material
      * types and valid material type options.
     */
-    // TODO: If you add Paper and then remove some types and re-add Paper all the types come back
-    useEffect( () => {
-            console.log("Watching materialTypeOptions...")
-
+    useEffect(() => {
             const validMaterialTypes = validateMaterialTypes(selectedMaterialTypes, materialTypeOptions);
 
             setSelectedMaterialTypes(validMaterialTypes);
-        }, [materialTypeOptions]
-    );
+    }, [materialTypeOptions]);
+
+    /* Filter data based on filter selections
+     *
+     */
+    useEffect(() => {
+        // TODO: These could be sets from the get go...
+        const businessGroups = businessGroupFilter.length === 0
+            ? new Set(businessGroupOptions.map(item => item.value))
+            : new Set(businessGroupFilter.map(item => item.value));
+        // If no category selected, all are so we use options as a filter
+        const materialCategories = materialCategoryFilter.length === 0
+            ? new Set(materialCategoryOptions.map(item => item.value))
+            : new Set(materialCategoryFilter.map(item => item.value));
+        // If no type selected, use category to filter else use selected
+        const materialTypes = selectedMaterialTypes.length === 0
+            ? new Set(materialTypeOptions.map(item => item.value))
+            : new Set(selectedMaterialTypes.map(item => item.value));
+        console.log(materialCategories, materialTypes)
+        const filteredData = data.filter(row =>
+                businessGroups.has(row.BusinessGroup) &&
+                materialCategories.has(row.MaterialCategory) &&
+                materialTypes.has(row.MaterialType)
+        )
+
+        const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
+            const existingCategory = acc.find(
+                (row: Data) => row.MaterialCategory === curr.MaterialCategory
+            );
+
+            if (existingCategory) {
+                existingCategory.MaterialTonsDisposed += curr.MaterialTonsDisposed;
+                existingCategory.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
+                existingCategory.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
+                existingCategory.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
+            } else {
+                acc.push({ ...curr });
+            }
+            return acc;
+            }, []
+        );
+        setCleanData(filteredAggData);
+
+    }, [data, businessGroupFilter, selectedMaterialTypes]);
 
     const handleBusinessGroupChange = (selectedOptions: MultiValue<OptionType>) => {
-        console.log("handleBusinessGroupChange");
         setBusinessGroupFilter(selectedOptions)
     }
 
     const handleCategoryChange = (selectedOptions: MultiValue<OptionType>) => {
-        console.log("handleCategoryChange");
         setMaterialCategoryFilter(selectedOptions);
     }
 
     const handleMaterialTypeChange = (selectedOptions: MultiValue<OptionType>) => {
-        console.log("handleMaterialTypeChange");
         setSelectedMaterialTypes(selectedOptions);
     }
 
@@ -181,7 +190,7 @@ const BasicChart: React.FC = () => {
                     {loading ? (
                         <p>Loading...</p>
                     ) : (
-                        <NivoChart data={aggregatedData} />
+                        <NivoChart data={cleanData} />
                     )}
             </div>
         </div>
