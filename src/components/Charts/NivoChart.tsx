@@ -7,11 +7,13 @@ import { format } from 'd3-format';
 interface NivoChartProps {
     data: {
         MaterialCategory: string;
+        MaterialType: string;
         MaterialTonsDisposed: number;
         MaterialTonsInCurbsideOrganics: number;
         MaterialTonsInCurbsideRecycle: number;
         MaterialTonsInOtherDiversion: number;
-    }[];
+    }[],
+    index: string;
 }
 
 // Define a mapping for your keys to human-readable labels
@@ -22,23 +24,25 @@ const labelMapping: { [key: string]: string } = {
     MaterialTonsInOtherDiversion: "Material Tons in Other Diversion",
 };
 
-const NivoChart: React.FC<NivoChartProps> = ({ data }) => {
-    console.log("Nivo Chart:", data);
+const NivoChart: React.FC<NivoChartProps> = ({ data, index }) => {
+    console.log("Nivo Chart indexed by:", index, data);
 
-    // Sort the data by MaterialTonsDisposed in descending order
-    const sortedData = data.sort((a, b) => b.MaterialTonsDisposed - a.MaterialTonsDisposed);
+    // Sort the data by total disposed in descending order
+    const sortedData = data.sort((a, b) =>
+        (b.MaterialTonsDisposed - a.MaterialTonsDisposed) +
+        (b.MaterialTonsInCurbsideOrganics - a.MaterialTonsInCurbsideOrganics) +
+        (b.MaterialTonsInCurbsideRecycle - a.MaterialTonsInCurbsideRecycle) +
+        (b.MaterialTonsInOtherDiversion - a.MaterialTonsInOtherDiversion));
+
+    const indexString = index === "MaterialCategory" ? "Material Category" : "Material Type";
 
     return (
         <div style={{ height: 400, position: 'relative' }}>
-        {/* Custom Title for Legend */}
-            <div style={{ position: 'absolute', top: 0, right: 0, padding: '10px', fontWeight: 'bold' }}>
-                Material Type
-             </div>
             <ResponsiveBar
                 data={sortedData}
                 keys={Object.keys(labelMapping)}
-                indexBy="MaterialCategory"
-                margin={{ top: 20, right: 20, bottom: 100, left: 75 }}
+                indexBy={index}
+                margin={{ top: 20, right: 200, bottom: 100, left: 75 }}
                 padding={0.3}
                 enableLabel={false}
                 valueScale={{ type: 'linear' }}
@@ -54,7 +58,7 @@ const NivoChart: React.FC<NivoChartProps> = ({ data }) => {
                     tickSize: 5,
                     tickPadding: 5,
                     tickRotation: -30,
-                    legend: 'Material Category',
+                    legend: indexString,
                     legendPosition: 'middle',
                     legendOffset: 75
                 }}
@@ -80,7 +84,7 @@ const NivoChart: React.FC<NivoChartProps> = ({ data }) => {
                                  borderRadius: 10, borderColor:'black',
                                  borderWidth:2}}>
                         <ul>
-                            <li>Material Category: {indexValue}</li>
+                            <li>{indexString}: {indexValue}</li>
                             <li>Amount of Resources (tons): {format(".2s")(value)}</li>
                             <li>Type of Disposal: {labelMapping[id]} </li>
                         </ul>
@@ -92,7 +96,7 @@ const NivoChart: React.FC<NivoChartProps> = ({ data }) => {
                         anchor: 'top-right',
                         direction: 'column',
                         justify: false,
-                        translateX: -80,
+                        translateX: 100,
                         translateY: 0,
                         itemsSpacing: 2,
                         itemWidth: 100,
@@ -111,8 +115,8 @@ const NivoChart: React.FC<NivoChartProps> = ({ data }) => {
                     }
                 ]}
                 role="application"
-                ariaLabel="Nivo bar chart demo"
-                barAriaLabel={e => `${labelMapping[e.id]}: ${e.formattedValue} in country: ${e.indexValue}`}
+                ariaLabel="Data Visualization"
+                barAriaLabel={e => `${labelMapping[e.id]}: ${e.formattedValue} in county: ${e.indexValue}`}
             />
         </div>
     );

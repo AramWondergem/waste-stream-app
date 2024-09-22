@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 // Determine the directory name of the current module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const __input_dir = "../public/data"
+const __output_dir = "../src/data"
 
 const files = [
     "MaterialTypes",
@@ -14,8 +16,8 @@ const files = [
 
 const convertedFilePaths = files.map((file) => {
     return {
-        csvFilePath: path.join(__dirname, "../public/data", `${file}.csv`),
-        jsonFilePath: path.join(__dirname, "../public/data", `${file}.json`)
+        csvFilePath: path.join(__dirname, __input_dir, `${file}.csv`),
+        jsonFilePath: path.join(__dirname, __output_dir, `${file}.json`)
     }
 });
 

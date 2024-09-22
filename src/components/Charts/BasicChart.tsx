@@ -2,61 +2,26 @@
 
 import ChartThree from "@/components/Charts/ChartThree";
 import React, { useEffect, useState } from "react";
-import { GetStaticProps } from 'next';
 import ChartFive from "@/components/Charts/ChartFive";
 import BarChart from "@/components/Charts/BarChart";
 import NivoChart from "@/components/Charts/NivoChart";
-import SelectGroupOne from "@/components/FormElements/SelectGroup/SelectGroupOne";
-import SelectGroupTwo from "@/components/FormElements/SelectGroup/SelectGroupTwo";
-import SelectGroupThree from "@/components/FormElements/SelectGroup/SelectGroupThree";
 import Select from 'react-select';
 import { MultiValue, ActionMeta } from 'react-select';
 
-
-
-import MultiSelect from "@/components/FormElements/MultiSelect";
 import ChartOne from "./ChartOne";
-import MaterialTypes from "../../../public/data/MaterialTypes.json"
-import BusinessGroups from "../../../public/data/BusinessGroups.json"
-import path from 'path';
 import { parseCSV } from "@/utils/csvUtils";
-import fs from 'fs';
-
-interface DataProps {
-    materials: any[];
-    businesses: any[];
-}
-
-// export const getStaticProps: GetStaticProps = async () => {
-//     // Define paths to JSON files
-//     const materialsPath = path.join(process.cwd(), 'public/data/materials.json');
-//     const businessesPath = path.join(process.cwd(), 'public/data/businesses.json');
-
-//     // Read and parse JSON files
-//     const materials = JSON.parse(MaterialTypes);
-//     const businesses = JSON.parse(BusinessGroups);
-
-//     return {
-//         props: {
-//             materials,
-//             businesses,
-//         },
-//     };
-// };
+import { OptionType, getBusinessGroupOptions, getMaterialCategoryOptions, getValidMaterialTypes, validateMaterialTypes } from "@/utils/filterUtils";
 
 const BasicChart: React.FC = () => {
-    interface OptionType {
-        label: string;
-        value: string;
-    }
-
     const [data, setData] = useState<any[]>([]);
+    const [cleanData, setCleanData] = useState<any[]>([]);
     const [jurisdictions, setJurisdction] = useState<string[]>([]);
     const [businessGroupFilter, setBusinessGroupFilter] = useState<MultiValue<OptionType>>([]);
     const [materialCategoryFilter, setMaterialCategoryFilter] = useState<MultiValue<OptionType>>([]);
     const [selectedMaterialTypes, setSelectedMaterialTypes] = useState<MultiValue<OptionType>>([]);
     const [materialTypeOptions, setMaterialTypeOptions] = useState<OptionType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [indexKey, setIndexKey] = useState<string>("MaterialCategory");
 
     interface Data {
         MaterialCategory: string;
@@ -69,6 +34,7 @@ const BasicChart: React.FC = () => {
         MaterialType: string;
     }
 
+    /* Load csv data to object only once */
     useEffect(() => {
         // Fetch the CSV file from the public folder
         fetch('/data/materialsforabusinessgroup_allcounties.csv')
@@ -86,7 +52,6 @@ const BasicChart: React.FC = () => {
                     Jurisdiction : row['Jurisdiction(s)'],
                     MaterialType : row['Material Type'],
                 }));
-                // console.log("Transformed Data: ", transformedData);
                 setData(transformedData);
                 setLoading(false);
             })
@@ -96,109 +61,102 @@ const BasicChart: React.FC = () => {
             });
     }, []);
 
-    console.log(data);
+    const businessGroupOptions = getBusinessGroupOptions();
+    const materialCategoryOptions = getMaterialCategoryOptions();
 
-    const aggregatedData = data.reduce<Data[]>((acc, curr) => {
-        const existingCategory = acc.find(
-            (row: Data) => row.MaterialCategory === curr.MaterialCategory
+    /* Listen for material category filter changes and updated valid material
+     * type options.
+     *
+     * Valid material type options are the intersection of selected categories
+     * and all material type's category.
+    */
+    useEffect(() => {
+            const validMaterialTypeOptions = getValidMaterialTypes(materialCategoryFilter)
+            setMaterialTypeOptions(validMaterialTypeOptions);
+    }, [materialCategoryFilter]);
+
+    /* Listen for material type options changes and validate selected material
+     * types.
+     *
+     * Validated material types are the difference of the selected material
+     * types and valid material type options.
+    */
+    useEffect(() => {
+            const validMaterialTypes = validateMaterialTypes(selectedMaterialTypes, materialTypeOptions);
+
+            setSelectedMaterialTypes(validMaterialTypes);
+    }, [materialTypeOptions]);
+
+    /* Filter data based on filter selections
+     *
+     */
+    useEffect(() => {
+        // TODO: These could be sets from the get go...
+        const businessGroups = businessGroupFilter.length === 0
+            ? new Set(businessGroupOptions.map(item => item.value))
+            : new Set(businessGroupFilter.map(item => item.value));
+        // If no category selected, all are so we use options as a filter
+        const materialCategories = materialCategoryFilter.length === 0
+            ? new Set(materialCategoryOptions.map(item => item.value))
+            : new Set(materialCategoryFilter.map(item => item.value));
+        // If no type selected, use category to filter else use selected
+        const materialTypes = selectedMaterialTypes.length === 0
+            ? new Set(materialTypeOptions.map(item => item.value))
+            : new Set(selectedMaterialTypes.map(item => item.value));
+        console.log(materialCategories, materialTypes)
+        const filteredData = data.filter(row =>
+                businessGroups.has(row.BusinessGroup) &&
+                materialCategories.has(row.MaterialCategory) &&
+                materialTypes.has(row.MaterialType)
+        )
+
+        console.log("Filtered: ", filteredData)
+
+        const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
+            let existingData = null;
+            if (selectedMaterialTypes.length === 0) {
+                setIndexKey("MaterialCategory")
+                existingData = acc.find(
+                    (row: Data) => row.MaterialCategory === curr.MaterialCategory
+                );
+            } else {
+                setIndexKey("MaterialType")
+                existingData = acc.find(
+                    (row: Data) => row.MaterialType === curr.MaterialType
+                );
+            }
+
+            if (existingData) {
+                existingData.MaterialTonsDisposed += curr.MaterialTonsDisposed;
+                existingData.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
+                existingData.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
+                existingData.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
+            } else {
+                acc.push({ ...curr });
+            }
+            return acc;
+            }, []
         );
+        setCleanData(filteredAggData);
 
-        if (existingCategory) {
-            existingCategory.MaterialTonsDisposed += curr.MaterialTonsDisposed;
-            existingCategory.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
-            existingCategory.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
-            existingCategory.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
-        } else {
-            acc.push({ ...curr });
-        }
-      return acc;
-    }, []);
-
-    console.log("MaterialTypes: ", MaterialTypes)
-    console.log("BusinessGroups: ", BusinessGroups)
-
-    const businessGroupOptions = BusinessGroups.map( (item, index) => {
-        return {
-            label : item['Business Group'],
-            value : item['Business Group'],
-        };
-    });
-
-    const materialCategoryOptions: OptionType[] = Array.from(new Set(MaterialTypes.map(item => item.Category))).map( (item) => {
-        return {
-            label : item,
-            value : item
-        }
-    })
-
-    // const materialTypeOptions: OptionType[] = MaterialTypes.filter(item => {
-    //     return materialCategoryFilter.length === 0 ||
-    //            materialCategoryFilter.some(categ => categ.value === item.Category)
-    //     }
-    // ).map( (item) => {
-    //     return {
-    //         label : item['Material Type'],
-    //         value : item['Material Type'],
-    //     }
-    // })
+    }, [data, businessGroupFilter, selectedMaterialTypes]);
 
     const handleBusinessGroupChange = (selectedOptions: MultiValue<OptionType>) => {
         setBusinessGroupFilter(selectedOptions)
     }
 
-    useEffect(() => {
-            const filteredMaterialTypeOptions = MaterialTypes.filter(item => {
-                return materialCategoryFilter.length === 0 ||
-                       materialCategoryFilter.some(categ => categ.value === item.Category)
-            }).map(item => ({
-                label: item['Material Type'],
-                value: item['Material Type'],
-            }));
-
-            setMaterialTypeOptions(filteredMaterialTypeOptions);
-
-            const validMaterialTypes = materialTypeOptions.filter(opt => {
-                return selectedMaterialTypes.length === 0 ||
-                        selectedMaterialTypes.some(item => {return item.value == opt.value;}
-                    )
-                }
-            );
-            console.log("UE: Selected Material Types: ", selectedMaterialTypes);
-            console.log("UE: Material Type Options: ", materialTypeOptions);
-            console.log("UE: Valid Material Types: ", validMaterialTypes);
-            setSelectedMaterialTypes(validMaterialTypes);
-        }, [materialCategoryFilter]
-    );
-    console.log("MT Options: ", materialTypeOptions)
-
-    /* TODO:
-     * The selectedMaterialTypes doesn't get invalidated correctly.
-    */
     const handleCategoryChange = (selectedOptions: MultiValue<OptionType>) => {
-        setMaterialCategoryFilter(selectedOptions || []);
-        // console.log("Selected types: ", selectedMaterialTypes);
-        // console.log("Eligible types: ", materialTypeOptions);
-        // const validMaterialTypes = selectedMaterialTypes.filter(item => {
-        //         return materialTypeOptions.some(opt => opt.value == item.value)
-        //     })
-        // console.log("HDL: Selected Material Types: ", selectedMaterialTypes);
-        // console.log("HDL: Material Type Options: ", materialTypeOptions);
-        // console.log("HDL: Valid Material Types: ", validMaterialTypes);
-        // setSelectedMaterialTypes(validMaterialTypes)
+        setMaterialCategoryFilter(selectedOptions);
     }
 
     const handleMaterialTypeChange = (selectedOptions: MultiValue<OptionType>) => {
         setSelectedMaterialTypes(selectedOptions);
     }
 
-    console.log("BGs: ", businessGroupFilter)
-    console.log("MCs: ", materialCategoryFilter)
-    console.log("MTs: ", selectedMaterialTypes)
-
     return (
     <>
-    <div>
-        <div>
+    <div className="dropdown-container" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Business Groups</label>
             <Select isMulti
                 options={businessGroupOptions}
@@ -206,7 +164,7 @@ const BasicChart: React.FC = () => {
                 onChange={handleBusinessGroupChange}
             />
         </div>
-        <div>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Material Categories</label>
             <Select isMulti
                 options={materialCategoryOptions}
@@ -214,7 +172,7 @@ const BasicChart: React.FC = () => {
                 onChange={handleCategoryChange}
             />
         </div>
-        <div>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Material Types</label>
             <Select isMulti
                 options={materialTypeOptions}
@@ -226,12 +184,14 @@ const BasicChart: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
             <div className="bg-white p-4 rounded shadow">
-                <h2 className="text-xl font-bold mb-4"> My Chart </h2>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        <NivoChart data={aggregatedData} />
-                    )}
+                <h2 className="text-xl font-bold mb-4">Data visualized</h2>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : cleanData.length === 0 ? (
+                    <p>No data available for the selected filters.</p>
+                ) : (
+                    <NivoChart data={cleanData} index={indexKey} />
+                )}
             </div>
         </div>
     </div>
