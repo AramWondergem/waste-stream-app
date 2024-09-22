@@ -34,6 +34,7 @@ const BasicChart: React.FC = () => {
     const [selectedMaterialTypes, setSelectedMaterialTypes] = useState<MultiValue<OptionType>>([]);
     const [materialTypeOptions, setMaterialTypeOptions] = useState<OptionType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [indexKey, setIndexKey] = useState<string>("MaterialCategory");
 
     interface Data {
         MaterialCategory: string;
@@ -64,7 +65,6 @@ const BasicChart: React.FC = () => {
                     Jurisdiction : row['Jurisdiction(s)'],
                     MaterialType : row['Material Type'],
                 }));
-                // console.log("Transformed Data: ", transformedData);
                 setData(transformedData);
                 setLoading(false);
             })
@@ -123,16 +123,27 @@ const BasicChart: React.FC = () => {
                 materialTypes.has(row.MaterialType)
         )
 
-        const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
-            const existingCategory = acc.find(
-                (row: Data) => row.MaterialCategory === curr.MaterialCategory
-            );
+        console.log("Filtered: ", filteredData)
 
-            if (existingCategory) {
-                existingCategory.MaterialTonsDisposed += curr.MaterialTonsDisposed;
-                existingCategory.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
-                existingCategory.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
-                existingCategory.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
+        const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
+            let existingData = null;
+            if (selectedMaterialTypes.length === 0) {
+                setIndexKey("MaterialCategory")
+                existingData = acc.find(
+                    (row: Data) => row.MaterialCategory === curr.MaterialCategory
+                );
+            } else {
+                setIndexKey("MaterialType")
+                existingData = acc.find(
+                    (row: Data) => row.MaterialType === curr.MaterialType
+                );
+            }
+
+            if (existingData) {
+                existingData.MaterialTonsDisposed += curr.MaterialTonsDisposed;
+                existingData.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
+                existingData.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
+                existingData.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
             } else {
                 acc.push({ ...curr });
             }
@@ -157,8 +168,8 @@ const BasicChart: React.FC = () => {
 
     return (
     <>
-    <div>
-        <div>
+    <div className="dropdown-container" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Business Groups</label>
             <Select isMulti
                 options={businessGroupOptions}
@@ -166,7 +177,7 @@ const BasicChart: React.FC = () => {
                 onChange={handleBusinessGroupChange}
             />
         </div>
-        <div>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Material Categories</label>
             <Select isMulti
                 options={materialCategoryOptions}
@@ -174,7 +185,7 @@ const BasicChart: React.FC = () => {
                 onChange={handleCategoryChange}
             />
         </div>
-        <div>
+        <div style={{flex : '1', margin : '0 10px' }}>
             <label>Material Types</label>
             <Select isMulti
                 options={materialTypeOptions}
@@ -186,12 +197,14 @@ const BasicChart: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
             <div className="bg-white p-4 rounded shadow">
-                <h2 className="text-xl font-bold mb-4"> My Chart </h2>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        <NivoChart data={cleanData} />
-                    )}
+                <h2 className="text-xl font-bold mb-4">Data visualized</h2>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : cleanData.length === 0 ? (
+                    <p>No data available for the selected filters.</p>
+                ) : (
+                    <NivoChart data={cleanData} index={indexKey} />
+                )}
             </div>
         </div>
     </div>
