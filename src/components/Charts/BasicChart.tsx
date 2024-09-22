@@ -2,28 +2,15 @@
 
 import ChartThree from "@/components/Charts/ChartThree";
 import React, { useEffect, useState } from "react";
-import { GetStaticProps } from 'next';
 import ChartFive from "@/components/Charts/ChartFive";
 import BarChart from "@/components/Charts/BarChart";
 import NivoChart from "@/components/Charts/NivoChart";
-import SelectGroupOne from "@/components/FormElements/SelectGroup/SelectGroupOne";
-import SelectGroupTwo from "@/components/FormElements/SelectGroup/SelectGroupTwo";
-import SelectGroupThree from "@/components/FormElements/SelectGroup/SelectGroupThree";
 import Select from 'react-select';
 import { MultiValue, ActionMeta } from 'react-select';
 
-import MultiSelect from "@/components/FormElements/MultiSelect";
 import ChartOne from "./ChartOne";
-import path from 'path';
 import { parseCSV } from "@/utils/csvUtils";
 import { OptionType, getBusinessGroupOptions, getMaterialCategoryOptions, getValidMaterialTypes, validateMaterialTypes } from "@/utils/filterUtils";
-
-import fs from 'fs';
-
-interface DataProps {
-    materials: any[];
-    businesses: any[];
-}
 
 const BasicChart: React.FC = () => {
     const [data, setData] = useState<any[]>([]);

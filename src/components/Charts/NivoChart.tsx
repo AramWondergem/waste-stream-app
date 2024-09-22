@@ -4,7 +4,6 @@ import { ResponsiveBar } from '@nivo/bar';
 import { format } from 'd3-format';
 
 
-// TODO: Still needed (question)
 interface NivoChartProps {
     data: {
         MaterialCategory: string;
