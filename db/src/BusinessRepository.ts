@@ -17,7 +17,7 @@ export async function findBusinesss(criteria: Partial<Business>) {
     query = query.where('business_id', '=', criteria.business_id)
   }
 
-  if (criteria.county_id) {
+  if (criteria.business_group_id) {
     query = query.where('business_group_id', '=', criteria.business_group_id)
   }
 
