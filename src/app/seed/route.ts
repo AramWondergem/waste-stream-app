@@ -10,18 +10,6 @@ import * as BusinessDisposalRecordRepository from '../../../db/src/BusinessDispo
 import * as GroupDisposalRecordRepository from '../../../db/src/GroupDisposalRecordRepository'
 
 
-async function printTables() {
-  const tables = await db
-    .selectFrom('information_schema.tables')
-    .select('table_name')
-    .where('table_schema', '=', 'public')
-    .execute();
-
-  console.log("");
-  console.log(tables);
-  console.log("");
-}
-
 
 async function createTables() {
   await db.schema
@@ -175,7 +163,7 @@ function ensureError(value: unknown): Error {
 }
 
 
-export async function dropAllTables() {
+async function dropAllTables() {
   // NOTE: need to do this in an order where a table isn't dropped until no other tables exist that depend on that table (e.g. reverse order to creation)
 
   await db.schema.dropTable('group_disposal_record').execute()

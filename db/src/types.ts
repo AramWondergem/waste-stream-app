@@ -29,7 +29,7 @@ export interface JurisdictionTable {
   lat: number;                         // decimal(8, 6)
 }
 
-export type Jurisdiction = Selectable<JursidictionTable>
+export type Jurisdiction = Selectable<JurisdictionTable>
 export type NewJurisdiction = Insertable<JurisdictionTable>
 export type JurisdictionUpdate = Updateable<JurisdictionTable>
 
