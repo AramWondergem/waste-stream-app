@@ -1,0 +1,34 @@
+name: Frontend Tests
+
+on:
+  # Triggers the workflow on push or pull request to main or any other branch.
+  push:
+    branches: 
+      - main
+  pull_request:
+    branches: 
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Node.js environment, adjust version if needed
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Use the version matching your local environment
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Run tests
+      - name: Run tests
+        run: npm run test -- src/tests/filterUtils.test.ts # Specify the path if needed
+
