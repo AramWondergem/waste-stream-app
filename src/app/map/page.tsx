@@ -1,20 +1,17 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import React from 'react';
+import MapComponent from '../../components/Maps/Map';
+import DefaultLayout from '@/components/Layouts/DefaultLayout';
+import "../../css/map.css"
 
-export const metadata: Metadata = {
-  title: "Next.js Map Page | NextAdmin - Next.js Dashboard Kit",
-  description: "This is Next.js Map page for NextAdmin Dashboard Kit",
+const MapPage = () => {
+    return (
+        <DefaultLayout>
+            <div className=".map-container">
+                <h1>Business and County Locations</h1>
+                    <MapComponent />
+            </div>
+        </DefaultLayout>
+    );
 };
 
-const Map = () => {
-  return (
-    <DefaultLayout>
-      <div className="mx-auto w-full max-w-[970px]">
-        <Breadcrumb pageName="Map" />
-      </div>
-    </DefaultLayout>
-  );
-};
-
-export default Map;
+export default MapPage;

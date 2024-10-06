@@ -1,0 +1,13 @@
+/* Add this CSS to your styles */
+.map-container {
+    width: 90%;
+    /* Adjust width as needed */
+    height: 80vh;
+    /* Adjust height relative to viewport height */
+    margin: 20px auto;
+    /* Add margins to center the map with some space */
+    border: 1px solid #ccc;
+    /* Optional: Add a border for better visibility */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    /* Optional: Add some shadow for styling */
+}
