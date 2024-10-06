@@ -122,10 +122,16 @@ const MapComponent: React.FC = () => {
         }
     };
 
-    const dotIcon = L.divIcon({className: 'custom-dot-icon',
-                               iconSize: [25,25],
-                               popupAnchor: [0, -5]
-                            });
+    const makeDotIcon = (size: number) => {
+        const randomNumber = Math.random() * size
+        const dotIcon = L.divIcon({
+            className: 'custom-dot-icon',
+            iconSize: [randomNumber, randomNumber],
+            popupAnchor: [0, -5]
+        });
+
+        return dotIcon;
+    }
 
 
     return (
@@ -143,17 +149,19 @@ const MapComponent: React.FC = () => {
                 subdomains={['a', 'b', 'c', 'd']}
                 maxZoom={20}
             />
-            {sfBusinesses.map((biz, index) =>
-                    <Marker
-                        key={index}
-                        riseOnHover={true}
-                        position={biz} // Leaflet expects [lat, lng]
-                        icon={dotIcon}
-                    >
-                        <Popup>"moo"</Popup>
-                    </Marker>
+            {sfBusinesses.map((biz, index) => {
+                const n = makeDotIcon(25);
+                return (<Marker
+                            key={index}
+                            riseOnHover={true}
+                            position={biz} // Leaflet expects [lat, lng]
+                            icon={n}
+                        >
+                            <Popup>"moo"</Popup>
+                        </Marker>)
+                }
             )}
-            {/* <GeoJSON
+            <GeoJSON
                 data={sfFeatures}
                 style={() => ({
                     fillColor: '#007BFF',
@@ -162,7 +170,7 @@ const MapComponent: React.FC = () => {
                     fillOpacity: 0.5
                 })}
                 onEachFeature={onEachFeature}
-            /> */}
+            />
         </MapContainer>
     );
 };
