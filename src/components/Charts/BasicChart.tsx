@@ -31,51 +31,48 @@ const BasicChart: React.FC = () => {
     const [indexKey, setIndexKey] = useState<string>("MaterialCategory");
 
     interface Data {
-        MaterialCategory: string;
-        MaterialTonsDisposed: number;
-        MaterialTonsInCurbsideOrganics: number;
-        MaterialTonsInCurbsideRecycle: number;
-        MaterialTonsInOtherDiversion: number;
-        BusinessGroup: string;
-        Jurisdiction: string;
-        MaterialType: string;
+        materialCategory: string;
+        materialTonsDisposed: number;
+        materialTonsInCurbsideOrganics: number;
+        materialTonsInCurbsideRecycle: number;
+        materialTonsInOtherDiversion: number;
+        businessGroup: string;
+        jurisdiction: string;
+        materialType: string;
     }
 
+    const fetchData = async (materialCategories: string[], materialTypes: string[], jurisdiction: string[], businessGroup: string[]) => {
+        try {
+            console.log('fetchData called');
 
+            // Define the request body
+            const body: FilterBody = {
+                materialCategories: materialCategories,
+                materialTypes: materialTypes,
+                jurisdiction: jurisdiction,
+                businessGroup: businessGroup,
+            };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                console.log('fetchData called');
+            // Send POST request with appropriate options
+            const response = await fetch('/api/material-types', {
+                method: 'POST', // Set method to POST
+                headers: { 'Content-Type': 'application/json' }, // Set headers to specify JSON
+                body: JSON.stringify(body), // Include the body in the request
+            });
 
-                // Define the request body
-                const body: FilterBody = {
-                    materialCategories: ['hallo', 'boe'],
-                    materialTypes: ['hallo', 'boe'],
-                    counties: [],
-                    businessTypes: ['hi'],
-                };
-
-                // Send POST request with appropriate options
-                const response = await fetch('/api/material-types', {
-                    method: 'POST', // Set method to POST
-                    headers: { 'Content-Type': 'application/json' }, // Set headers to specify JSON
-                    body: JSON.stringify(body), // Include the body in the request
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch data');
-                }
-
-                const result = await response.text();
-                console.log("Result: ", result);
-            } catch (error) {
-                console.error("Error fetching data:", error);
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
             }
-        };
 
-        fetchData();
-    }, []);
+            const result = await response.text();
+            console.log("Result: ", result);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+
+
+
 
 
     /* Load csv data to object only once */
@@ -137,51 +134,55 @@ const BasicChart: React.FC = () => {
     useEffect(() => {
         // TODO: These could be sets from the get go...
         const businessGroups = businessGroupFilter.length === 0
-            ? new Set(businessGroupOptions.map(item => item.value))
-            : new Set(businessGroupFilter.map(item => item.value));
+            ? businessGroupOptions.map(item => item.value)
+            : businessGroupFilter.map(item => item.value);
         // If no category selected, all are so we use options as a filter
         const materialCategories = materialCategoryFilter.length === 0
-            ? new Set(materialCategoryOptions.map(item => item.value))
-            : new Set(materialCategoryFilter.map(item => item.value));
+            ? materialCategoryOptions.map(item => item.value)
+            : materialCategoryFilter.map(item => item.value);
         // If no type selected, use category to filter else use selected
         const materialTypes = selectedMaterialTypes.length === 0
-            ? new Set(materialTypeOptions.map(item => item.value))
-            : new Set(selectedMaterialTypes.map(item => item.value));
+            ? materialTypeOptions.map(item => item.value)
+            : selectedMaterialTypes.map(item => item.value);
         // console.log(materialCategories, materialTypes)
-        const filteredData = data.filter(row =>
-            businessGroups.has(row.BusinessGroup) &&
-            materialCategories.has(row.MaterialCategory) &&
-            materialTypes.has(row.MaterialType)
-        )
 
-        // console.log("Filtered: ", filteredData)
+        fetchData(materialCategories, materialTypes, jurisdictions, businessGroups);
 
-        const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
-                let existingData = null;
-                if (selectedMaterialTypes.length === 0) {
-                    setIndexKey("MaterialCategory")
-                    existingData = acc.find(
-                        (row: Data) => row.MaterialCategory === curr.MaterialCategory
-                    );
-                } else {
-                    setIndexKey("MaterialType")
-                    existingData = acc.find(
-                        (row: Data) => row.MaterialType === curr.MaterialType
-                    );
-                }
 
-                if (existingData) {
-                    existingData.MaterialTonsDisposed += curr.MaterialTonsDisposed;
-                    existingData.MaterialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
-                    existingData.MaterialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
-                    existingData.MaterialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
-                } else {
-                    acc.push({...curr});
-                }
-                return acc;
-            }, []
-        );
-        setCleanData(filteredAggData);
+        // const filteredData = data.filter(row =>
+        //     businessGroups.has(row.BusinessGroup) &&
+        //     materialCategories.has(row.MaterialCategory) &&
+        //     materialTypes.has(row.MaterialType)
+        // )
+        //
+        // // console.log("Filtered: ", filteredData)
+        //
+        // const filteredAggData = filteredData.reduce<Data[]>((acc, curr) => {
+        //         let existingData = null;
+        //         if (selectedMaterialTypes.length === 0) {
+        //             setIndexKey("MaterialCategory")
+        //             existingData = acc.find(
+        //                 (row: Data) => row.materialCategory === curr.MaterialCategory
+        //             );
+        //         } else {
+        //             setIndexKey("MaterialType")
+        //             existingData = acc.find(
+        //                 (row: Data) => row.materialType === curr.MaterialType
+        //             );
+        //         }
+        //
+        //         if (existingData) {
+        //             existingData.materialTonsDisposed += curr.MaterialTonsDisposed;
+        //             existingData.materialTonsInCurbsideOrganics += curr.MaterialTonsInCurbsideOrganics;
+        //             existingData.materialTonsInCurbsideRecycle += curr.MaterialTonsInCurbsideRecycle;
+        //             existingData.materialTonsInOtherDiversion += curr.MaterialTonsInOtherDiversion;
+        //         } else {
+        //             acc.push({...curr});
+        //         }
+        //         return acc;
+        //     }, []
+        // );
+        // setCleanData(filteredAggData);
 
     }, [data, businessGroupFilter, selectedMaterialTypes]);
 

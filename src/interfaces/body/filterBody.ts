@@ -1,6 +1,6 @@
 export interface FilterBody {
-    counties: string[];
+    jurisdiction: string[];
     materialCategories: string[];
     materialTypes: string[];
-    businessTypes: string[];
+    businessGroup: string[];
 }
